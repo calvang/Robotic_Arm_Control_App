@@ -1,3 +1,0 @@
-[submodule "kinematics"]
-	path = kinematics_engine/kinematics
-	url = https://github.com/calvang/kinematics.git
