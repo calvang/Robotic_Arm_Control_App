@@ -2,7 +2,7 @@
 
 A React web/desktop application to control a custom-built 6-axis robotic arm.
 
-![image-20210108214619733](/home/calvang/Projects/RA Personal/control_app/images/render2.png)
+![image-20210108214619733](images/render2.png)
 
 ## Controls
 

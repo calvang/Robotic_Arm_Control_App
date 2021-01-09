@@ -18,9 +18,15 @@ interface FingerProps {
   setClawStep: any
 }
 
+interface JointProps {
+  angles: number[],
+  setAngles: any
+}
+
 interface CompProps {
   file: string,    // path to .obj file
   color: number[]  // RGB color values
+
 }
 
 interface RenderProps {
@@ -110,7 +116,7 @@ const ArmComp: React.FC<MeshProps & CompProps> = (props) => {
   return <mesh {...props} ref={mesh}><primitive object={obj} /></mesh>
 }
 
-const Finger1: React.FC<MeshProps & Vector3Props & FingerProps 
+const Finger1: React.FC<MeshProps & Vector3Props & FingerProps
   & CompProps & RenderProps> = (props) => {
   const mesh = useRef<Mesh>()
   const vec = useRef<Vector3>()
@@ -120,7 +126,6 @@ const Finger1: React.FC<MeshProps & Vector3Props & FingerProps
       mesh.current.position.sub(point) // remove the offset
       mesh.current.position.applyAxisAngle(z_axis, theta) // rotate the POSITION
       mesh.current.position.add(point) // re-add the offset
-      // console.log(mesh.current.)
     }
   }
 
@@ -147,7 +152,7 @@ const Finger1: React.FC<MeshProps & Vector3Props & FingerProps
   )
 }
 
-const Finger2: React.FC<MeshProps & Vector3Props & FingerProps
+const Finger2: React.FC<MeshProps & Vector3Props & FingerProps 
   & CompProps & RenderProps> = (props) => {
   const mesh = useRef<Mesh>()
   const vec = useRef<Vector3>()
@@ -241,7 +246,8 @@ const Hand: React.FC<MeshProps & Vector3Props & CompProps & RenderProps> = (prop
   )
 }
 
-const AB: React.FC<MeshProps & Vector3Props & CompProps & RenderProps> = (props) => {
+const AB: React.FC<MeshProps & Vector3Props & JointProps
+  & CompProps & RenderProps> = (props) => {
   const mesh = useRef<Mesh>()
   const vec = useRef<Vector3>()
   
@@ -287,7 +293,8 @@ const AB: React.FC<MeshProps & Vector3Props & CompProps & RenderProps> = (props)
   )
 }
 
-const BC: React.FC<MeshProps & Vector3Props & CompProps & RenderProps> = (props) => {
+const BC: React.FC<MeshProps & Vector3Props & JointProps
+  & CompProps & RenderProps> = (props) => {
   const mesh = useRef<Mesh>()
   const vec = useRef<Vector3>()
   
@@ -318,12 +325,15 @@ const BC: React.FC<MeshProps & Vector3Props & CompProps & RenderProps> = (props)
           file={arm_comps.AB.file}
           color={arm_comps.AB.color}
           position={arm_comps.AB.position as any}
-          rotation={arm_comps.AB.rotation as any} />
+          rotation={arm_comps.AB.rotation as any}
+          angles={props.angles}
+          setAngles={props.setAngles} />
     </mesh>
   )
 }
 
-const CD: React.FC<MeshProps & Vector3Props & CompProps & RenderProps> = (props) => {
+const CD: React.FC<MeshProps & Vector3Props & JointProps
+  & CompProps & RenderProps> = (props) => {
   const mesh = useRef<Mesh>()
   const vec = useRef<Vector3>()
 
@@ -354,14 +364,16 @@ const CD: React.FC<MeshProps & Vector3Props & CompProps & RenderProps> = (props)
           file={arm_comps.BC.file}
           color={arm_comps.BC.color}
           position={arm_comps.BC.position as any}
-          rotation={arm_comps.BC.rotation as any} />
+          rotation={arm_comps.BC.rotation as any}
+          angles={props.angles}
+          setAngles={props.setAngles} />
     </mesh>
   )
 }
 
 const Arm: React.FC<MeshProps & RenderProps> = (props) => {
   const mesh = useRef<Mesh>()
-  const z_axis = new Vector3(0, 0, 1)
+  const [angles, setAngles] = useState([90, -90, -90]) // store BCD joint angles
 
   useFrame(() => {
     if (mesh.current) {
@@ -382,7 +394,9 @@ const Arm: React.FC<MeshProps & RenderProps> = (props) => {
           file={arm_comps.CD.file} 
           color={arm_comps.CD.color}
           position={arm_comps.CD.position as any} 
-          rotation={arm_comps.CD.rotation as any} />
+          rotation={arm_comps.CD.rotation as any}
+          angles={angles}
+          setAngles={setAngles} />
         <ArmComp
           file={arm_comps.BaseE1.file} 
           color={arm_comps.BaseE1.color}
@@ -449,7 +463,6 @@ const ViewControls = () => {
 }
 
 export default function Renderer(props: RenderProps) {
-
   return (
     <div style={{ 
       height: "100vh", 
