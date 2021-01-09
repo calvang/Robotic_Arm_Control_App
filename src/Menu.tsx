@@ -39,7 +39,7 @@ const Help = () => {
           <code>R/F</code> - Joint C Pitch<br/>
           <code>W/S</code> - Joint B Pitch<br/>
           <code>D/A</code> - Wrist A Roll<br/>
-          <code>Space</code> - End Effector Activation<br/><br/>
+          <code>X/Z</code> - End Effector Open/Close<br/>
           Tasks can be recorded in this mode by pressing the record button <i className="fa fa-plus-square-o fa-lg" ></i>.
         </p>
         <h4><i className="fa fa-magic fa-lg" ></i> Automatic Mode</h4>

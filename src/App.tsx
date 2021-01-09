@@ -13,7 +13,7 @@ export default function App() {
   const [controlKeys, setKeys] = useState({
     "ArrowUp": false, "ArrowDown": false, "ArrowLeft": false, "ArrowRight": false,
     "w": false, "s": false, "a": false, "d": false, "r": false, "f": false,
-    " ": false
+    "x": false, "z": false
   })
 
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
