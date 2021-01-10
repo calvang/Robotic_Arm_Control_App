@@ -15,6 +15,11 @@ export default function App() {
     "w": false, "s": false, "a": false, "d": false, "r": false, "f": false,
     "x": false, "z": false
   })
+  const [target, setTarget] = useState([0,0,0]) // tracks the location of the target to create
+  const [createTarget, setCreateTarget] = useState(false) // when true triggers target creation
+  const [base_theta_delta, setBaseSpeed] = useState(0.04)
+  const [joints_theta_delta, setJointSpeed] = useState(0.02)
+  const [wrist_theta_delta, setWristSpeed] = useState(0.02)
 
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     setKeys(prevKeys => ({...prevKeys, [e.key]: true}))
@@ -73,8 +78,27 @@ export default function App() {
       <Menu mode={mode} 
         setControlMode={setControlMode} 
         setAutomaticMode={setAutomaticMode}
-        handleTaskRecord={handleRecordTask} />
-      <Controls controlKeys={controlKeys} />
+        handleTaskRecord={handleRecordTask}
+        base_theta_delta={base_theta_delta} 
+        joints_theta_delta={joints_theta_delta} 
+        wrist_theta_delta={wrist_theta_delta}
+        setBaseSpeed={setBaseSpeed}
+        setJointSpeed={setJointSpeed}
+        setWristSpeed={setWristSpeed} 
+        target={target}
+        setTarget={setTarget}
+        createTarget={createTarget}
+        setCreateTarget={setCreateTarget} />
+      <Controls 
+        mode={mode} 
+        controlKeys={controlKeys} 
+        target={target}
+        setTarget={setTarget}
+        createTarget={createTarget}
+        setCreateTarget={setCreateTarget}
+        base_theta_delta={base_theta_delta} 
+        joints_theta_delta={joints_theta_delta} 
+        wrist_theta_delta={wrist_theta_delta} />
 
         {/* <button onClick={()=>{
               ipcRenderer.send('anything-asynchronous', 'ping')

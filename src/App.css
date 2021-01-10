@@ -31,6 +31,14 @@
   color: #61dafb;
 }
 
+.Render {
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  position: absolute;
+  z-index: 0;
+}
+
 .Menu {
   position: absolute;
   left: 50px;
@@ -59,7 +67,61 @@
   background-color: rgb(30, 30, 32);
   width: 400px;
   padding: 8px 20px;
-  font-size: calc(5px + 1vmin);;
+  font-size: calc(5px + 1vmin);
+}
+
+.Popup {
+  position: absolute;
+  z-index: 4;
+  left: calc(100vw - 216px);
+  top: 20px;
+  background-color: rgb(61, 58, 58);
+  color: rgb(223, 223, 223);
+  width: 180px;
+  height: 76px;
+  padding: 10px 8px;
+  font-size: calc(5px + 1vmin);
+  border-radius: 10px;
+}
+
+.PopupWithButton {
+  position: absolute;
+  z-index: 4;
+  left: calc(100vw - 216px);
+  top: 20px;
+  background-color: rgb(61, 58, 58);
+  color: rgb(223, 223, 223);
+  width: 180px;
+  height: 104px;
+  padding: 10px 8px;
+  font-size: calc(5px + 1vmin);
+  border-radius: 10px;
+}
+
+.PopupField {
+  background-color: rgb(223, 223, 223);
+  color: black;
+  width: 30px;
+  text-align: center;
+  border: 4px solid rgb(223, 223, 223);
+  border-radius: 4px;
+  margin: 5px;
+}
+
+.PopupButton {
+  background-color: rgb(173, 173, 173);
+  width: 160px;
+  height: 24px;
+  border: none;
+  border-radius: 6px;
+  padding: 5px 5px;
+  color: black;
+  text-align: center;
+  font-size: 12px;
+}
+
+*:focus {
+  outline: 0;
 }
 
 p {
@@ -71,7 +133,7 @@ ul {
   margin: 0;
   padding: 0;
   width: 50px;
-  background-color: rgb(40, 40, 44);
+  background-color:rgb(61, 58, 58);
   position: fixed;
   height: 100%;
   overflow: auto;
@@ -81,7 +143,7 @@ ul {
 button {
   display: inline-block;
   color: rgb(173, 173, 173);
-  background-color: rgb(40, 40, 44);
+  background-color: rgb(61, 58, 58);
   border: none;
   padding: 16px 0;
   margin: 0;
@@ -99,12 +161,12 @@ button:active {
 
 .active_opt {
   border-left: 2px solid white;
-  border-right: 2px solid rgb(40, 40, 44);
+  border-right: 2px solid rgb(61, 58, 58);
   color: white;
 }
 
 button:hover {
-  background-color: rgb(40, 40, 44);
+  background-color: rgb(61, 58, 58);
   color: white;
   border: none;
   outline: none;
