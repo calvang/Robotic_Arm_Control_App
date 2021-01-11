@@ -1,0 +1,13 @@
+{
+    "tasks": [
+        { 
+            "name": "Simple Movement",
+            "desc": "A sequence of basic movements",
+            "data":[
+                [1, 1, 1],
+                [1, 2, 1],
+                [2, 1, 1]
+            ]
+        }
+    ]
+}

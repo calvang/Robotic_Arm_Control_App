@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import Slider from '@material-ui/core/Slider'
-import { withStyles } from '@material-ui/core/styles';
-// const { ipcRenderer } = window.require('electron');
+import { Slider, Table, TableBody, TableCell, TableContainer,
+         TableHead, TableRow, Paper, withStyles  } from '@material-ui/core'
+import * as default_tasks from './default_tasks.json'
+// const { ipcRenderer } = window.require('electron')
 
 interface MenuProps {
   mode: boolean,
@@ -15,9 +16,7 @@ interface MenuProps {
   setJointSpeed: any, 
   setWristSpeed: any,
   target: number[],
-  setTarget: any,
-  createTarget: boolean,
-  setCreateTarget: any
+  setTarget: any
 }
 
 interface PopupProps {
@@ -29,8 +28,11 @@ interface PopupProps {
 interface AutoProps {
   target: number[],
   setTarget: any,
-  createTarget: boolean,
-  setCreateTarget: any
+}
+
+interface RecordProps {
+  mode: boolean,
+  record: boolean
 }
 
 interface SettingsProps {
@@ -69,11 +71,8 @@ const PopupField = (props: PopupProps) => {
 }
 
 const Automatic = (props: AutoProps) => {
-  const handleSubmit = (e: any) => {
+  const handleSubmit = (e: any) => { // this is here to prevent reloading
     e.preventDefault()
-    console.log(props.createTarget)
-    props.setCreateTarget(true)
-    console.log(props.createTarget)
   }
 
   return (
@@ -95,20 +94,89 @@ const Automatic = (props: AutoProps) => {
             index={2} />
         </tr></tbody></table>
         <input type="submit" style={{ display: "none" }} />
-        {/* <button className="PopupButton">Submit</button> */}
       </form>
     </div>
   )
 }
 
+const task_columns = [
+  { field: "name", headerName: "Task", width: 70 },
+  { field: "length", headerName: "Length", width: 30 },
+  { field: "desc", headerName: "Description", width: 200 }
+]
+
 const Tasks = () => {
+  const [isList, setIsList] = useState(true) // whether on the main task list
+  const [tasks, setTasks] = useState(readData())
   // var res = ipcRenderer.sendSync("tasks", "get"))
+
+  function readData() {
+    var task_list = []
+    for (let i in default_tasks.tasks)
+      task_list.push({
+        name: default_tasks.tasks[i].name, 
+        length: default_tasks.tasks[i].data.length, 
+        desc: default_tasks.tasks[i].desc })
+    return task_list
+  }
+
   return (
     <div className="Menu">
       <div className="MenuHeader"><h3>TASKS</h3></div>
-      <div className="MenuBody">
-        <p>Tasks</p>
+      <div className="MenuBody" style={{ height: "calc(100vh - 56px" }}>
+        <br/>
+        <TableContainer component={Paper}>
+          <Table aria-label="tasks table">
+            <TableHead>
+              <TableRow>
+                { task_columns.map((col) => {
+                  return <TableCell 
+                    key={col.field}
+                    style={{ width: col.width}}>
+                    <b>{col.headerName}</b>
+                  </TableCell>
+                })}
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              { tasks.map((row, idx) => {
+                return <TableRow key={idx}>
+                  <TableCell scope="row">
+                    {row.name}
+                  </TableCell>
+                  <TableCell>{row.length}</TableCell>
+                  <TableCell>{row.desc}</TableCell>
+                </TableRow>
+              })}
+            </TableBody>
+          </Table>
+        </TableContainer>
       </div>
+    </div>
+  )
+}
+
+const Record = (props: RecordProps) => {
+  const [isRecording, setIsRecording] = useState(false)
+  const { mode } = props
+
+  const onClick = (e: any) => {
+    if (isRecording) setIsRecording(false)
+    else setIsRecording(true)
+  }
+
+  return (
+    <div className={ `Record ${mode ? "RecordAuto" : "RecordControl"}` }>    
+      { 
+        !isRecording ? <>Start Recording:&nbsp;&nbsp;
+          <button className="RecordButton" onClick={onClick}>
+            <i className="fa fa-circle fa-lg" ></i>
+          </button></> 
+        : <>Stop Recording:&nbsp;&nbsp;
+          <button className="RecordButton" onClick={onClick}>
+            <i className="fa fa-stop-circle fa-lg" ></i>
+          </button></> 
+      }
     </div>
   )
 }
@@ -217,7 +285,10 @@ const Help = () => {
         </p>
         <h4><i className="fa fa-magic fa-lg" ></i> Automatic Mode</h4>
         <p>
-          In automatic mode, the arm uses inverse kinematics the navigate by following inputed coordinates.
+          In automatic mode, keyboard controls for the arm except for those for the wrist and claw are disabled, 
+          and the arm uses inverse kinematics the navigate by following inputed coordinates.<br/><br/>
+          Target coordinates are indicated by an orange point can be changed through a popup tool or by dragging the point
+          around. To drag the point, click the object to disable orbit controls and then use the mouse to drag it.
           Tasks can be recorded in this mode by pressing the record button <i className="fa fa-plus-square-o fa-lg" ></i>.
         </p>
         <h4><i className="fa fa-files-o fa-lg" ></i> Tasks</h4>
@@ -241,10 +312,21 @@ const Help = () => {
   )
 }
 
+const MenuButton = (props: MenuButtonProps) => {
+  return (
+    <li className={props.active ? "active_opt" : "" }>
+      <button onClick={props.handler}>
+        <i className={`fa ${props.icon} fa-2x`} ></i>
+      </button>
+    </li>
+  )
+}
+
 export default function Menu(props: MenuProps) {
   const [help, setHelp] = useState(false)
   const [tasks, setTasks] = useState(false)
   const [settings, setSettings] = useState(false)
+  const [record, setRecord] = useState(false)
 
   const handleHelp = () => {
     if (help) setHelp(false)
@@ -273,14 +355,9 @@ export default function Menu(props: MenuProps) {
     }
   }
 
-  const MenuButton = (props: MenuButtonProps) => {
-    return (
-      <li className={props.active ? "active_opt" : "" }>
-        <button onClick={props.handler}>
-          <i className={`fa ${props.icon} fa-2x`} ></i>
-        </button>
-      </li>
-    )
+  const handleRecord = () => {
+    if (record) setRecord(false)
+    else setRecord(true)
   }
 
   return (
@@ -289,16 +366,17 @@ export default function Menu(props: MenuProps) {
         <MenuButton icon="fa-arrows" handler={props.setControlMode} active={!props.mode} />
         <MenuButton icon="fa-magic" handler={props.setAutomaticMode} active={props.mode}/>
         <MenuButton icon="fa-files-o" handler={handleTasks} active={tasks}/>
-        <MenuButton icon="fa-tasks" handler={handleSettings} active={false}/>
-        <MenuButton icon="fa-plus-square-o" handler={handleHelp} active={false}/>
+        <MenuButton icon="fa-plus-square-o" handler={handleRecord} active={record}/>
+        <MenuButton icon="fa-tasks" handler={handleSettings} active={settings}/>
         <MenuButton icon="fa-question-circle-o" handler={handleHelp} active={help}/>
       </ul>
       { props.mode && <Automatic 
         target={props.target}
-        setTarget={props.setTarget}
-        createTarget={props.createTarget}
-        setCreateTarget={props.setCreateTarget} />}
+        setTarget={props.setTarget} /> }
       { tasks && <Tasks /> }
+      { record && <Record 
+        mode={props.mode}
+        record={record} /> }
       { settings && <Settings 
         base_theta_delta={props.base_theta_delta} 
         joints_theta_delta={props.joints_theta_delta} 
