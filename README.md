@@ -2,7 +2,9 @@
 
 A React web/desktop application to control a custom-built 6-axis robotic arm.
 
-![image-20210108214619733](images/render2.png)
+Demo available at: https://calvang.github.io/Robotic_Arm_Control_App/
+
+<img src="images/render2.png" alt="image-20210108214619733" style="zoom: 20%;" />
 
 ## Controls
 
