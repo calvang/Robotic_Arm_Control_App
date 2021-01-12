@@ -4,6 +4,8 @@ import { Slider, Table, TableBody, TableCell, TableContainer,
 import * as default_tasks from './default_tasks.json'
 // const { ipcRenderer } = window.require('electron')
 
+const default_angles = [0, 90, -90, -90, 0, 0]
+
 interface MenuProps {
   mode: boolean,
   setControlMode: any,
@@ -16,7 +18,10 @@ interface MenuProps {
   setJointSpeed: any, 
   setWristSpeed: any,
   target: number[],
-  setTarget: any
+  setTarget: any,
+  controlTask: boolean,
+  setControlTask: any,
+  setControlAngles: any
 }
 
 interface PopupProps {
@@ -30,6 +35,28 @@ interface AutoProps {
   setTarget: any,
 }
 
+interface TaskProps {
+  tasks: any[],
+  changeTask: any,
+  currentTask: number,
+  isPlaying: boolean,
+  handlePlayStop: any,
+  handleView: any
+}
+
+interface TaskViewProps {
+  tasks: any[],
+  changeTask: any,
+  isPlaying: boolean,
+  setIsPlaying: any,
+  activeTask: number,
+  setActiveTask: any,
+  executeTask: any,
+  controlTask: boolean,
+  setControlTask: any,
+  setControlAngles: any
+}
+
 interface RecordProps {
   mode: boolean,
   record: boolean
@@ -41,7 +68,9 @@ interface SettingsProps {
   wrist_theta_delta: number,
   setBaseSpeed: any,
   setJointSpeed: any, 
-  setWristSpeed: any
+  setWristSpeed: any,
+  taskInterval: number,
+  setTaskInterval: any
 }
 
 interface MenuButtonProps {
@@ -105,19 +134,164 @@ const task_columns = [
   { field: "desc", headerName: "Description", width: 200 }
 ]
 
-const Tasks = () => {
-  const [isList, setIsList] = useState(true) // whether on the main task list
-  const [tasks, setTasks] = useState(readData())
+const TaskList = (props: TaskProps) => {
+  const { tasks, isPlaying, handlePlayStop, handleView } = props
+
+  return (
+    <TableContainer component={Paper}>
+      <Table aria-label="tasks table">
+        <TableHead>
+          <TableRow>
+            { task_columns.map((col) => {
+              return <TableCell 
+                key={col.field}
+                style={{ width: col.width}}>
+                <b>{col.headerName}</b>
+              </TableCell>
+            })}
+            <TableCell></TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          { tasks.map((row, idx) => {
+            return <TableRow key={idx}>
+              <TableCell scope="row">
+                <button className="TableButton"
+                  onClick={() => handleView(idx)}>
+                  {row.name}
+                </button>
+              </TableCell>
+              <TableCell>{row.length}</TableCell>
+              <TableCell>{row.desc}</TableCell>
+              <TableCell>
+                <button 
+                  className={isPlaying ? "StopButton" : "PlayButton"}
+                  onClick={() => handlePlayStop(idx)}>
+                  { isPlaying ? <i className="fa fa-stop-circle fa-2x"></i>
+                    : <i className="fa fa-play-circle fa-2x"></i> }
+                </button>
+              </TableCell>
+            </TableRow>
+          })}
+        </TableBody>
+      </Table>
+    </TableContainer>
+  )
+}
+
+const task_command_control_columns = [
+  { field: "e", headerName: "Base (E)", width: 50 },
+  { field: "d", headerName: "Joint D", width: 50 },
+  { field: "c", headerName: "Joint C", width: 50 },
+  { field: "b", headerName: "Joint B", width: 50 },
+  { field: "a", headerName: "Joint A", width: 50 },
+  { field: "claw", headerName: "Claw", width: 50 }
+]
+
+const task_command_automatic_columns = [
+  { field: "x", headerName: "X", width: 100 },
+  { field: "y", headerName: "Y", width: 100 },
+  { field: "z", headerName: "Z", width: 100 }
+]
+
+const TaskCommand = (props: TaskProps) => {
+  const { tasks, changeTask, currentTask, 
+          isPlaying, handlePlayStop, handleView } = props
+  const columns = tasks[currentTask].type === "control" ? task_command_control_columns 
+                : task_command_automatic_columns
+  const [data, setData] = useState(tasks[currentTask].data)
+
+  function handleChange(e: any, row_idx: number, col_idx: number) {
+    var new_data = [...data]
+    new_data[row_idx][col_idx] = e.target.value
+    setData(new_data)
+  }
+
+  return (
+    <>
+      <h4>{tasks[currentTask].name}</h4>
+      <div style={{ color: "rgb(173, 173, 173)", marginTop: "-20px"}}>
+        <button onClick={() => handleView(currentTask)} 
+          style={{ width: "50px" }}>
+          <i className="fa fa-arrow-circle-left fa-2x"></i>
+        </button>
+        <button 
+          className={isPlaying ? "StopButton" : "PlayButton"}
+          style={{ width: "50px" }}
+          onClick={() => handlePlayStop(currentTask)}>
+          { isPlaying ? <i className="fa fa-stop-circle fa-2x"></i>
+            : <i className="fa fa-play-circle fa-2x"></i> }
+        </button>
+        <button type="submit"
+          form={tasks[currentTask].name}
+          style={{ width: "50px" }}>
+          <i className="fa fa-save fa-2x"></i>
+        </button>
+      </div>
+      <form id={tasks[currentTask].name} 
+        onSubmit={(e) => changeTask(e, data, currentTask)}>
+        <TableContainer component={Paper}>
+          <Table aria-label="tasks table">
+            <TableHead>
+              <TableRow>
+                { columns.map((col) => {
+                  return <TableCell 
+                    key={col.field}
+                    style={{ textAlign: "center", width: col.width }}>
+                    <b>{col.headerName}</b>
+                  </TableCell>
+                })}
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              { tasks[currentTask].data.map((row: any[], row_idx: number) => {
+                return <TableRow key={row_idx}>
+                  { columns.map((col, col_idx) => {
+                    return <TableCell 
+                        key={col.field} style={{ textAlign: "center" }} >
+                        <input 
+                          className="PopupField"
+                          style={{ backgroundColor: "white", borderColor: "white" }}
+                          type="text" 
+                          name={`${row_idx},${col_idx}`} 
+                          value={data[row_idx][col_idx]}
+                          onChange={(e) => handleChange(e, row_idx, col_idx)} />
+                      </TableCell>
+                  })}
+                </TableRow>
+              })}
+            </TableBody>
+          </Table>
+        </TableContainer>
+        <input type="submit" style={{ display: "none" }} />
+      </form>
+    </>
+  )
+}
+
+const Tasks = (props: TaskViewProps) => {
+  const [currentTask, setCurrentTask] = useState(-1) // index to displayed task (-1) is null
+  const { tasks, changeTask, isPlaying, setIsPlaying,
+          activeTask, setActiveTask, executeTask } = props
   // var res = ipcRenderer.sendSync("tasks", "get"))
 
-  function readData() {
-    var task_list = []
-    for (let i in default_tasks.tasks)
-      task_list.push({
-        name: default_tasks.tasks[i].name, 
-        length: default_tasks.tasks[i].data.length, 
-        desc: default_tasks.tasks[i].desc })
-    return task_list
+  function handlePlayStop(index: number) {
+    if (isPlaying && activeTask !== -1) {
+      setIsPlaying(false)
+      setActiveTask(-1)
+    }
+    else if (!isPlaying && activeTask === -1) {
+      setIsPlaying(true)
+      setActiveTask(index)
+      executeTask(index)
+    }
+  }
+
+  function handleView(index: number) {
+    if (currentTask === -1) // go from list to specific task
+      setCurrentTask(index)
+    else 
+      setCurrentTask(-1)
   }
 
   return (
@@ -125,32 +299,20 @@ const Tasks = () => {
       <div className="MenuHeader"><h3>TASKS</h3></div>
       <div className="MenuBody" style={{ height: "calc(100vh - 56px" }}>
         <br/>
-        <TableContainer component={Paper}>
-          <Table aria-label="tasks table">
-            <TableHead>
-              <TableRow>
-                { task_columns.map((col) => {
-                  return <TableCell 
-                    key={col.field}
-                    style={{ width: col.width}}>
-                    <b>{col.headerName}</b>
-                  </TableCell>
-                })}
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              { tasks.map((row, idx) => {
-                return <TableRow key={idx}>
-                  <TableCell scope="row">
-                    {row.name}
-                  </TableCell>
-                  <TableCell>{row.length}</TableCell>
-                  <TableCell>{row.desc}</TableCell>
-                </TableRow>
-              })}
-            </TableBody>
-          </Table>
-        </TableContainer>
+        { currentTask === -1 ? <TaskList 
+            tasks={tasks}
+            changeTask={null}
+            currentTask={currentTask}
+            isPlaying={isPlaying}
+            handlePlayStop={handlePlayStop}
+            handleView={handleView} /> 
+          : <TaskCommand 
+          tasks={tasks}
+          changeTask={changeTask}
+          currentTask={currentTask}
+          isPlaying={isPlaying}
+          handlePlayStop={handlePlayStop}
+          handleView={handleView} />}
       </div>
     </div>
   )
@@ -227,6 +389,10 @@ const Settings = (props: SettingsProps) => {
     props.setWristSpeed(val)
   }
 
+  const handleTaskInterval = (e: any, val: number | number[]) => {
+    props.setTaskInterval(val)
+  }
+
 
   return (
     <div className="Menu">
@@ -261,7 +427,16 @@ const Settings = (props: SettingsProps) => {
             step={0.01}
             min={0.01}
             max={1}
-            onChange={handleWrist} /><br/><br/>
+            onChange={handleWrist} />
+        <h4>Task Step Interval</h4>
+          <ValueSlider 
+            value={props.taskInterval}
+            valueLabelDisplay="auto"
+            track="inverted"
+            step={100}
+            min={500}
+            max={8000}
+            onChange={handleTaskInterval} /><br/><br/>
       </div>
     </div>
   )
@@ -298,8 +473,8 @@ const Help = () => {
         </p>
         <pre>
           # Schema: angles in degrees <br/>
-          # E  D  C  B  A <br/>
-          90 40 30 90 120 
+          # E  D  C  B  A Claw (0/1 = true/false)<br/>
+          90 40 30 90 120 0
         </pre>
         <p>Example instruction with target positions: </p>
         <pre>
@@ -327,6 +502,10 @@ export default function Menu(props: MenuProps) {
   const [tasks, setTasks] = useState(false)
   const [settings, setSettings] = useState(false)
   const [record, setRecord] = useState(false)
+  const [taskList, setTaskList] = useState(default_tasks.tasks)
+  const [isPlaying, setIsPlaying] = useState(false)
+  const [activeTask, setActiveTask] = useState(-1)
+  const [taskInterval, setTaskInterval] = useState(5000) // interval between task iters
 
   const handleHelp = () => {
     if (help) setHelp(false)
@@ -360,6 +539,52 @@ export default function Menu(props: MenuProps) {
     else setRecord(true)
   }
 
+  const changeTask = (e: any, data: any[], index: number) => {
+    e.preventDefault()
+    var new_tasks = [...taskList]
+    new_tasks[index].data = data
+    new_tasks[index].length = data.length
+    setTaskList(new_tasks)
+    console.log(0)
+  }
+
+  function executeTask(task_index: number) {
+    if (taskList[task_index].type === "control") {
+      props.setControlMode()
+      props.setControlAngles(default_angles)
+      props.setControlTask(true)
+    }
+    if (taskList[task_index].type === "automatic")
+      props.setAutomaticMode()
+    var current_interval = taskInterval
+    var data_length = taskList[task_index].data.length
+    for (let data_index = 0; data_index < data_length; ++data_index) {
+      setTimeout(function(){
+        iterateTask(task_index, data_index)
+      }, current_interval)
+      current_interval += taskInterval
+    }
+    setTimeout(function(){ // reset to starting position
+      props.setControlAngles(default_angles)
+    }, taskInterval * (data_length + 1))
+    setTimeout(function(){
+      props.setControlTask(false)
+    }, taskInterval * (data_length + 2))
+    setIsPlaying(false)
+    setActiveTask(-1)
+  }
+
+  const iterateTask = (task_index: number, data_index: number) => {
+    if (taskList[task_index].type === "control") {
+      var rad_angles = [...taskList[task_index].data[data_index]]// convert to radians
+      for (let i = 0; i < taskList[task_index].data[data_index].length-1; ++i) 
+        rad_angles[i] *= 0.01745329
+      props.setControlAngles(rad_angles)
+    }
+    else if (taskList[task_index].type === "automatic")
+      props.setTarget(taskList[task_index].data[data_index])
+  }
+
   return (
     <div style={{ color: "white", position: "absolute", zIndex: 2 }}>
       <ul>
@@ -373,7 +598,17 @@ export default function Menu(props: MenuProps) {
       { props.mode && <Automatic 
         target={props.target}
         setTarget={props.setTarget} /> }
-      { tasks && <Tasks /> }
+      { tasks && <Tasks 
+        tasks={taskList} 
+        changeTask={changeTask}
+        isPlaying={isPlaying}
+        setIsPlaying={setIsPlaying}
+        activeTask={activeTask}
+        setActiveTask={setActiveTask}
+        executeTask={executeTask}
+        controlTask={props.controlTask}
+        setControlTask={props.setControlTask}
+        setControlAngles={props.setControlAngles} /> }
       { record && <Record 
         mode={props.mode}
         record={record} /> }
@@ -383,7 +618,9 @@ export default function Menu(props: MenuProps) {
         wrist_theta_delta={props.wrist_theta_delta}
         setBaseSpeed={props.setBaseSpeed}
         setJointSpeed={props.setJointSpeed}
-        setWristSpeed={props.setWristSpeed} /> }
+        setWristSpeed={props.setWristSpeed}
+        taskInterval={taskInterval}
+        setTaskInterval={setTaskInterval} /> }
       { help && <Help /> }
     </div>
   )

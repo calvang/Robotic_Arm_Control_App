@@ -18,11 +18,15 @@ declare global { // workaround for using OrbitControls as a JSX component
 
 interface FingerProps {
   clawStep: number, // iterations of the claw
-  setClawStep: any
+  setClawStep: any,
+  controlTask: boolean,
+  controlAngles: number[]
 }
 
 interface WristProps {
-  wrist_theta_delta: number
+  wrist_theta_delta: number,
+  controlTask: boolean,
+  controlAngles: number[]
 }
 
 interface JointProps {
@@ -31,7 +35,9 @@ interface JointProps {
   angles: number[],
   setAngles: any,
   mode: boolean,
-  modeInit: boolean
+  modeInit: boolean,
+  controlTask: boolean,
+  controlAngles: number[]
 }
 
 interface CompProps {
@@ -57,7 +63,11 @@ interface RenderProps {
   joints_theta_delta: number,
   wrist_theta_delta: number,
   mode: boolean,
-  controlKeys: any
+  controlKeys: any,
+  controlTask: boolean,
+  setControlTask: any,
+  controlAngles: number[],
+  setControlAngles: any
 }
 
 const x_axis             = new Vector3(1, 0, 0)
@@ -68,6 +78,7 @@ const blue               = [0.05, 0.15, 0.6]
 const white              = [0.5, 0.5, 0.5]
 const base_constraints   = [-125*180/Math.PI, 125*180/Math.PI] // angle contraints for base
 const joint_constraints  = [] // TODO
+const max_base_angle     = 3*Math.PI/4 + 0. // maximum angle base will turn at once
 const inital_base_angle  = 0 //-Math.PI/2
 const initial_angles     = [Math.PI/2, -Math.PI/2, -Math.PI/2, 0]  // D, C, D angles (rad)
 const link_lengths       = [0, 1.58, 1.403, 1.54] // CD, BC, AB + Effector lengths
@@ -175,6 +186,16 @@ const Finger1: React.FC<MeshProps & Vector3Props & FingerProps
         props.setClawStep(props.clawStep - 1)
         pivot(vec.current, +claw_theta_delta)
       }
+      if (props.controlTask && props.controlAngles.length > 0) {
+        if (props.controlAngles[5] === 1 && props.clawStep < claw_steps) {
+          props.setClawStep(props.clawStep + 1)
+          pivot(vec.current, -claw_theta_delta)
+        }
+        else if (props.controlAngles[5] === 0 && props.clawStep >= 0) {
+          props.setClawStep(props.clawStep - 1)
+          pivot(vec.current, +claw_theta_delta)
+        }
+      }
     }
   })
 
@@ -211,6 +232,16 @@ const Finger2: React.FC<MeshProps & Vector3Props & FingerProps
         props.setClawStep(props.clawStep - 1)
         pivot(vec.current, +claw_theta_delta)
       }
+      if (props.controlTask && props.controlAngles.length > 0) {
+        if (props.controlAngles[5] === 1 && props.clawStep < claw_steps) {
+          props.setClawStep(props.clawStep + 1)
+          pivot(vec.current, -claw_theta_delta)
+        }
+        else if (props.controlAngles[5] === 0 && props.clawStep >= 0) {
+          props.setClawStep(props.clawStep - 1)
+          pivot(vec.current, +claw_theta_delta)
+        }
+      }
     }
   })
 
@@ -228,7 +259,8 @@ const Hand: React.FC<MeshProps & Vector3Props & WristProps
   const mesh = useRef<Mesh>()
   const vec = useRef<Vector3>()
   const [clawStep, setClawStep] = useState(0) // number of claw iterations
-  
+  const [current_theta_delta, setCurrentThetaDelta] = useState(0)
+
   function pivot(point: Vector3, theta: number) { // rotate object around a given point
     if (mesh.current) {
       mesh.current.position.sub(point) // remove the offset
@@ -238,12 +270,35 @@ const Hand: React.FC<MeshProps & Vector3Props & WristProps
     }
   }
 
+  function step_towards_angle() {
+    if (vec.current) {
+      let curr_delta = props.controlAngles[4] - current_theta_delta
+      var norm_delta = Math.abs(curr_delta)
+      if (norm_delta < props.wrist_theta_delta) {
+        pivot(vec.current, curr_delta)
+        setCurrentThetaDelta(props.controlAngles[4])
+      }
+      else {
+        if (props.controlAngles[4] > current_theta_delta) {
+          pivot(vec.current, +props.wrist_theta_delta)
+          setCurrentThetaDelta(current_theta_delta + props.wrist_theta_delta)
+        }
+        else if (props.controlAngles[4] < current_theta_delta) {
+          pivot(vec.current, -props.wrist_theta_delta)
+          setCurrentThetaDelta(current_theta_delta - props.wrist_theta_delta)
+        }
+      }
+    }
+  }
+
   useFrame(() => {
     if (vec.current) {
       if (props.controlKeys[arm_comps.HandCase.pos_key])
         pivot(vec.current, +props.wrist_theta_delta)
       else if (props.controlKeys[arm_comps.HandCase.neg_key])
         pivot(vec.current, -props.wrist_theta_delta)
+      if (props.controlTask && props.controlAngles.length > 0) // handle control task
+        step_towards_angle()
     }
   })
 
@@ -268,7 +323,9 @@ const Hand: React.FC<MeshProps & Vector3Props & WristProps
         position={arm_comps.Finger1.position as any}
         rotation={arm_comps.Finger1.rotation as any} 
         clawStep={clawStep}
-        setClawStep={setClawStep} />
+        setClawStep={setClawStep}
+        controlTask={props.controlTask}
+        controlAngles={props.controlAngles} />
       <Finger2 // Finger 2
         controlKeys={props.controlKeys}
         file={arm_comps.Finger2.file}
@@ -276,7 +333,9 @@ const Hand: React.FC<MeshProps & Vector3Props & WristProps
         position={arm_comps.Finger2.position as any}
         rotation={arm_comps.Finger2.rotation as any}
         clawStep={clawStep}
-        setClawStep={setClawStep} />
+        setClawStep={setClawStep}
+        controlTask={props.controlTask}
+        controlAngles={props.controlAngles} />
     </mesh>
   )
 }
@@ -293,6 +352,28 @@ const AB: React.FC<MeshProps & Vector3Props & JointProps
       mesh.current.position.applyAxisAngle(z_axis, theta) // rotate the POSITION
       mesh.current.position.add(point) // re-add the offset
       mesh.current.rotateOnAxis(z_axis, theta) // rotate the OBJECT
+    }
+  }
+
+  function step_towards_angle() {
+    const { joints_theta_delta } = props
+    if (vec.current) {
+      var curr_delta = props.angles[2] - prevAngle
+      var norm_delta = Math.abs(curr_delta)
+      if (norm_delta < joints_theta_delta) {
+        pivot(vec.current, curr_delta)
+        setPrevAngle(props.angles[2])
+      }
+      else {
+        if (props.angles[2] > prevAngle) {
+          pivot(vec.current, +joints_theta_delta)
+          setPrevAngle(prevAngle + joints_theta_delta)
+        }
+        else if (props.angles[2] < prevAngle) {
+          pivot(vec.current, -joints_theta_delta)
+          setPrevAngle(prevAngle - joints_theta_delta)
+        }
+      }
     }
   }
 
@@ -313,23 +394,10 @@ const AB: React.FC<MeshProps & Vector3Props & JointProps
         // let theta_delta = props.angles[2] - prevAngle
         // pivot(vec.current, theta_delta)
         // setPrevAngle(props.angles[2])
-        var curr_delta = props.angles[2] - prevAngle
-        var norm_delta = Math.abs(curr_delta)
-        if (norm_delta < joints_theta_delta) {
-          pivot(vec.current, curr_delta)
-          setPrevAngle(props.angles[2])
-        }
-        else {
-          if (props.angles[2] > prevAngle) {
-            pivot(vec.current, +joints_theta_delta)
-            setPrevAngle(prevAngle + joints_theta_delta)
-          }
-          else if (props.angles[2] < prevAngle) {
-            pivot(vec.current, -joints_theta_delta)
-            setPrevAngle(prevAngle - joints_theta_delta)
-          }
-        }
+        step_towards_angle()
       }
+      if (props.controlTask && props.controlAngles.length > 0) // handle control task
+        step_towards_angle()
     }
   })
 
@@ -343,7 +411,9 @@ const AB: React.FC<MeshProps & Vector3Props & JointProps
         color={arm_comps.HandCase.color}
         position={arm_comps.HandCase.position as any}
         rotation={arm_comps.HandCase.rotation as any}
-        wrist_theta_delta={props.wrist_theta_delta} />
+        wrist_theta_delta={props.wrist_theta_delta}
+        controlTask={props.controlTask}
+        controlAngles={props.controlAngles} />
     </mesh>
   )
 }
@@ -360,6 +430,28 @@ const BC: React.FC<MeshProps & Vector3Props & JointProps
       mesh.current.position.applyAxisAngle(z_axis, theta) // rotate the POSITION
       mesh.current.position.add(point) // re-add the offset
       mesh.current.rotateOnAxis(z_axis, theta) // rotate the OBJECT
+    }
+  }
+
+  function step_towards_angle() {
+    const { joints_theta_delta } = props
+    if (vec.current) {
+      var curr_delta = props.angles[1] - prevAngle
+      var norm_delta = Math.abs(curr_delta)
+      if (norm_delta < joints_theta_delta) {
+        pivot(vec.current, curr_delta)
+        setPrevAngle(props.angles[1])
+      }
+      else {
+        if (props.angles[1] > prevAngle) {
+          pivot(vec.current, +joints_theta_delta)
+          setPrevAngle(prevAngle + joints_theta_delta)
+        }
+        else if (props.angles[1] < prevAngle) {
+          pivot(vec.current, -joints_theta_delta)
+          setPrevAngle(prevAngle - joints_theta_delta)
+        }
+      }
     }
   }
 
@@ -380,23 +472,10 @@ const BC: React.FC<MeshProps & Vector3Props & JointProps
         // let theta_delta = props.angles[1] - prevAngle
         // pivot(vec.current, theta_delta)
         // setPrevAngle(props.angles[1])
-        var curr_delta = props.angles[1] - prevAngle
-        var norm_delta = Math.abs(curr_delta)
-        if (norm_delta < joints_theta_delta) {
-          pivot(vec.current, curr_delta)
-          setPrevAngle(props.angles[1])
-        }
-        else {
-          if (props.angles[1] > prevAngle) {
-            pivot(vec.current, +joints_theta_delta)
-            setPrevAngle(prevAngle + joints_theta_delta)
-          }
-          else if (props.angles[1] < prevAngle) {
-            pivot(vec.current, -joints_theta_delta)
-            setPrevAngle(prevAngle - joints_theta_delta)
-          }
-        }
+        step_towards_angle()
       }
+      if (props.controlTask && props.controlAngles.length > 0) // handle control task
+        step_towards_angle()
     }
   })
   
@@ -415,7 +494,9 @@ const BC: React.FC<MeshProps & Vector3Props & JointProps
           angles={props.angles}
           setAngles={props.setAngles}
           mode={props.mode}
-          modeInit={props.modeInit} />
+          modeInit={props.modeInit}
+          controlTask={props.controlTask}
+          controlAngles={props.controlAngles} />
     </mesh>
   )
 }
@@ -432,6 +513,28 @@ const CD: React.FC<MeshProps & Vector3Props & JointProps
       mesh.current.position.applyAxisAngle(z_axis, theta) // rotate the POSITION
       mesh.current.position.add(point) // re-add the offset
       mesh.current.rotateOnAxis(z_axis, theta) // rotate the OBJECT
+    }
+  }
+
+  function step_towards_angle() {
+    const { joints_theta_delta } = props
+    if (vec.current) {
+      var curr_delta = props.angles[0] - prevAngle
+      var norm_delta = Math.abs(curr_delta)
+      if (norm_delta < joints_theta_delta) {
+        pivot(vec.current, curr_delta)
+        setPrevAngle(props.angles[0])
+      }
+      else {
+        if (props.angles[0] > prevAngle) {
+          pivot(vec.current, +joints_theta_delta)
+          setPrevAngle(prevAngle + joints_theta_delta)
+        }
+        else if (props.angles[0] < prevAngle) {
+          pivot(vec.current, -joints_theta_delta)
+          setPrevAngle(prevAngle - joints_theta_delta)
+        }
+      }
     }
   }
 
@@ -452,22 +555,11 @@ const CD: React.FC<MeshProps & Vector3Props & JointProps
         // let theta_delta = props.angles[0] - prevAngle
         // pivot(vec.current, theta_delta)
         // setPrevAngle(props.angles[0])
-        var curr_delta = props.angles[0] - prevAngle
-        var norm_delta = Math.abs(curr_delta)
-        if (norm_delta < joints_theta_delta) {
-          pivot(vec.current, curr_delta)
-          setPrevAngle(props.angles[0])
-        }
-        else {
-          if (props.angles[0] > prevAngle) {
-            pivot(vec.current, +joints_theta_delta)
-            setPrevAngle(prevAngle + joints_theta_delta)
-          }
-          else if (props.angles[0] < prevAngle) {
-            pivot(vec.current, -joints_theta_delta)
-            setPrevAngle(prevAngle - joints_theta_delta)
-          }
-        }
+        step_towards_angle()
+      }
+      if (props.controlTask && props.controlAngles.length > 0) { // handle control task
+        setAngles([props.controlAngles[1], props.controlAngles[2], props.controlAngles[3]])
+        step_towards_angle()
       }
     }
   })
@@ -487,7 +579,9 @@ const CD: React.FC<MeshProps & Vector3Props & JointProps
           angles={props.angles}
           setAngles={props.setAngles}
           mode={props.mode}
-          modeInit={props.modeInit} />
+          modeInit={props.modeInit}
+          controlTask={props.controlTask}
+          controlAngles={props.controlAngles} />
     </mesh>
   )
 }
@@ -499,7 +593,7 @@ const Arm: React.FC<MeshProps & RenderProps> = (props) => {
   const [joints, setJoints] = useState([[0,0],[0,0],[0,0],[0,0]])
   const [prevBaseAngle, setPrevBaseAngle] = useState(inital_base_angle)
   const [baseAngle, setBaseAngle] = useState(inital_base_angle)
-  
+
   function calculate_kinematics() {
     var { base_angle, target_2D } = orient_base(props.target)
     // if (base_angle != null && mesh.current) {
@@ -507,11 +601,11 @@ const Arm: React.FC<MeshProps & RenderProps> = (props) => {
     // }
     target_2D[1] -= base_offset[1] // subtract base y-offset
     // check if it's easier to move to a smaller angle
-    if (base_angle - prevBaseAngle > Math.PI/2) {
+    if (base_angle - prevBaseAngle > max_base_angle) {
       base_angle = -(Math.PI - base_angle)
       target_2D[0] = -(target_2D[0] + base_offset[0]) // flip axis
     }
-    else if (base_angle - prevBaseAngle < -Math.PI/2) {
+    else if (base_angle - prevBaseAngle < -max_base_angle) {
       base_angle = Math.PI + base_angle
       target_2D[0] = -(target_2D[0] + base_offset[0]) // flip axis
     }
@@ -521,6 +615,27 @@ const Arm: React.FC<MeshProps & RenderProps> = (props) => {
     setBaseAngle(base_angle)
     let new_angles = solve_ik([...joints], [...angles], link_lengths, arm_length, target_2D)
     if (new_angles) setAngles(new_angles)
+  }
+
+  function step_towards_angle() {
+    const { base_theta_delta } = props
+    var curr_delta = Math.abs(baseAngle - prevBaseAngle)
+    if (mesh.current) {
+      if (curr_delta < base_theta_delta) { // step towards target location
+        mesh.current.rotation.y = -baseAngle
+        setPrevBaseAngle(baseAngle)
+      }
+      else {
+        if (baseAngle > prevBaseAngle) {
+          mesh.current.rotation.y -= base_theta_delta
+          setPrevBaseAngle(prevBaseAngle + base_theta_delta)
+        }
+        else if (baseAngle < prevBaseAngle) {
+          mesh.current.rotation.y += base_theta_delta
+          setPrevBaseAngle(prevBaseAngle - base_theta_delta)
+        }
+      }
+    }
   }
 
   useFrame(() => {
@@ -547,21 +662,12 @@ const Arm: React.FC<MeshProps & RenderProps> = (props) => {
       // detect if arm is currently in auto mode
       if (mode && modeInit) {
         calculate_kinematics()
-        var curr_delta = Math.abs(baseAngle - prevBaseAngle)
-        if (curr_delta < base_theta_delta) { // step towards target location
-          mesh.current.rotation.y = -baseAngle
-          setPrevBaseAngle(baseAngle)
-        }
-        else {
-          if (baseAngle > prevBaseAngle) {
-            mesh.current.rotation.y -= base_theta_delta
-            setPrevBaseAngle(prevBaseAngle + base_theta_delta)
-          }
-          else if (baseAngle < prevBaseAngle) {
-            mesh.current.rotation.y += base_theta_delta
-            setPrevBaseAngle(prevBaseAngle - base_theta_delta)
-          }
-        }
+        step_towards_angle()
+      }
+      // handle controlTasks
+      if (props.controlTask && props.controlAngles.length > 0) {
+        setBaseAngle(-props.controlAngles[0])
+        step_towards_angle()
       }
     }
   })
@@ -582,7 +688,9 @@ const Arm: React.FC<MeshProps & RenderProps> = (props) => {
           angles={angles}
           setAngles={setAngles} 
           mode={props.mode}
-          modeInit={modeInit} />
+          modeInit={modeInit}
+          controlTask={props.controlTask}
+          controlAngles={props.controlAngles} />
         <ArmComp
           file={arm_comps.BaseE1.file} 
           color={arm_comps.BaseE1.color}
@@ -643,9 +751,9 @@ const Box: React.FC<MeshProps> = (props) => {
   const [hovered, setHover] = useState(false)
   const [active, setActive] = useState(false)
 
-  // useFrame(() => {
-  //   if (mesh.current) mesh.current.rotation.x = mesh.current.rotation.y += 0.01
-  // })
+  useFrame(() => {
+    if (mesh.current) mesh.current.rotation.x = mesh.current.rotation.y += 0.01
+  })
 
   return (
     <mesh
@@ -705,7 +813,11 @@ export default function Renderer(props: RenderProps) {
         joints_theta_delta={props.joints_theta_delta}
         base_theta_delta={props.base_theta_delta}
         mode={props.mode} 
-        controlKeys={props.controlKeys} />
+        controlKeys={props.controlKeys}
+        controlTask={props.controlTask}
+        setControlTask={props.setControlTask}
+        controlAngles={props.controlAngles}
+        setControlAngles={props.setControlAngles} />
     </Canvas>
     </div>
   )

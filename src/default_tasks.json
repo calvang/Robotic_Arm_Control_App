@@ -1,12 +1,49 @@
 {
     "tasks": [
         { 
-            "name": "Simple Movement",
-            "desc": "A sequence of basic movements",
+            "name": "Simple Control",
+            "desc": "A sequence of basic movements in control mode",
+            "type": "control",
+            "length": 3,
+            "data":[
+                [90, 45, -30, -30, 180, 1],
+                [-120, -30, 19, 45, -180, 0],
+                [120, 30, 19, 45, -180, 1]
+            ]
+        },
+        { 
+            "name": "Simple Automatic",
+            "desc": "A sequence of basic movements in automatic mode",
+            "type": "automatic",
+            "length": 3,
             "data":[
                 [1, 1, 1],
                 [1, 2, 1],
                 [2, 1, 1]
+            ]
+        },
+        { 
+            "name": "Back and Forth",
+            "desc": "Funny Dance",
+            "type": "automatic",
+            "length": 16,
+            "data":[
+                [2, 1, 0],
+                [-2, 1, 0],
+                [2, 1, 0],
+                [-2, 1, 0],
+                [2, 1, 0],
+                [-2, 1, 0],
+                [2, 1, 0],
+                [-2, 1, 0],
+                [1, 1, 2],
+                [1, 1, -2],
+                [1, 2, 2],
+                [1, 1, -2],
+                [1, 2, 2],
+                [1, 1, -2],
+                [1, 2, 2],
+                [1, 1, -2]
             ]
         }
     ]

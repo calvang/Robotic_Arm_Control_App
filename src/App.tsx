@@ -19,6 +19,8 @@ export default function App() {
   const [taskRecord, setTaskRecord] = useState(false)
   const [currentTask, setCurrentTask] = useState([]) // stores task being recorded
   const [taskList, setTaskList] = useState([[]])
+  const [controlTask, setControlTask] = useState(false) // activated if control task
+  const [controlAngles, setControlAngles] = useState([])
   const [controlKeys, setKeys] = useState(controlKeys_false)
   const [target, setTarget] = useState([1,0,0]) // tracks the location of the target to create
   const [base_theta_delta, setBaseSpeed] = useState(0.04)
@@ -102,7 +104,10 @@ export default function App() {
         setJointSpeed={setJointSpeed}
         setWristSpeed={setWristSpeed} 
         target={target}
-        setTarget={setTarget}/>
+        setTarget={setTarget} 
+        controlTask={controlTask}
+        setControlTask={setControlTask}
+        setControlAngles={setControlAngles} />
       <Controls 
         mode={mode} 
         controlKeys={controlKeys} 
@@ -110,7 +115,11 @@ export default function App() {
         setTarget={setTarget}
         base_theta_delta={base_theta_delta} 
         joints_theta_delta={joints_theta_delta} 
-        wrist_theta_delta={wrist_theta_delta} />
+        wrist_theta_delta={wrist_theta_delta}
+        controlTask={controlTask}
+        setControlTask={setControlTask}
+        controlAngles={controlAngles}
+        setControlAngles={setControlAngles} />
 
         {/* <button onClick={()=>{
               ipcRenderer.send('anything-asynchronous', 'ping')
