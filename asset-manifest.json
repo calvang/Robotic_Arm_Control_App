@@ -1,8 +1,8 @@
 {
   "files": {
     "main.css": "/Robotic_Arm_Control_App/static/css/main.b6a36162.chunk.css",
-    "main.js": "/Robotic_Arm_Control_App/static/js/main.cb001954.chunk.js",
-    "main.js.map": "/Robotic_Arm_Control_App/static/js/main.cb001954.chunk.js.map",
+    "main.js": "/Robotic_Arm_Control_App/static/js/main.c428d00f.chunk.js",
+    "main.js.map": "/Robotic_Arm_Control_App/static/js/main.c428d00f.chunk.js.map",
     "runtime-main.js": "/Robotic_Arm_Control_App/static/js/runtime-main.2ce189db.js",
     "runtime-main.js.map": "/Robotic_Arm_Control_App/static/js/runtime-main.2ce189db.js.map",
     "static/js/2.ec8c43ac.chunk.js": "/Robotic_Arm_Control_App/static/js/2.ec8c43ac.chunk.js",
@@ -16,6 +16,6 @@
     "static/js/runtime-main.2ce189db.js",
     "static/js/2.ec8c43ac.chunk.js",
     "static/css/main.b6a36162.chunk.css",
-    "static/js/main.cb001954.chunk.js"
+    "static/js/main.c428d00f.chunk.js"
   ]
 }
