@@ -12,7 +12,10 @@ interface ControlProps {
   controlTask: boolean,
   setControlTask: any,
   controlAngles: number[],
-  setControlAngles: any
+  setControlAngles: any,
+  taskRecord: boolean,
+  recordedTask: any[],
+  setRecordedTask: any
 }
 
 export default function Controls(props: ControlProps) {
@@ -34,7 +37,10 @@ export default function Controls(props: ControlProps) {
         controlTask={props.controlTask}
         setControlTask={props.setControlTask}
         controlAngles={props.controlAngles}
-        setControlAngles={props.setControlAngles} />
+        setControlAngles={props.setControlAngles}
+        taskRecord={props.taskRecord}
+        recordedTask={props.recordedTask}
+        setRecordedTask={props.setRecordedTask} />
     </div>
   );
 }

@@ -21,7 +21,11 @@ interface MenuProps {
   setTarget: any,
   controlTask: boolean,
   setControlTask: any,
-  setControlAngles: any
+  setControlAngles: any,
+  taskRecord: boolean,
+  setTaskRecord: any,
+  recordedTask: number[][],
+  setRecordedTask: any
 }
 
 interface PopupProps {
@@ -59,7 +63,9 @@ interface TaskViewProps {
 
 interface RecordProps {
   mode: boolean,
-  record: boolean
+  taskRecord: boolean,
+  stopRecording: any,
+  startRecording: any
 }
 
 interface SettingsProps {
@@ -319,18 +325,17 @@ const Tasks = (props: TaskViewProps) => {
 }
 
 const Record = (props: RecordProps) => {
-  const [isRecording, setIsRecording] = useState(false)
-  const { mode } = props
+  const { mode, taskRecord, stopRecording, startRecording } = props
 
   const onClick = (e: any) => {
-    if (isRecording) setIsRecording(false)
-    else setIsRecording(true)
+    if (taskRecord) stopRecording()
+    else startRecording()
   }
 
   return (
     <div className={ `Record ${mode ? "RecordAuto" : "RecordControl"}` }>    
       { 
-        !isRecording ? <>Start Recording:&nbsp;&nbsp;
+        !taskRecord ? <>Start Recording:&nbsp;&nbsp;
           <button className="RecordButton" onClick={onClick}>
             <i className="fa fa-circle fa-lg" ></i>
           </button></> 
@@ -456,7 +461,6 @@ const Help = () => {
           <code>W/S</code> - Joint B Pitch<br/>
           <code>D/A</code> - Wrist A Roll<br/>
           <code>X/Z</code> - End Effector Open/Close<br/>
-          Tasks can be recorded in this mode by pressing the record button <i className="fa fa-plus-square-o fa-lg" ></i>.
         </p>
         <h4><i className="fa fa-magic fa-lg" ></i> Automatic Mode</h4>
         <p>
@@ -585,6 +589,32 @@ export default function Menu(props: MenuProps) {
       props.setTarget(taskList[task_index].data[data_index])
   }
 
+  const startRecording = () => {
+    props.setTaskRecord(true)
+  }
+
+  const stopRecording = () => { 
+    let new_taskList = [...taskList]
+    let task_num = 1 + taskList.length - default_tasks.tasks.length
+    var saved_recordedTask = [...props.recordedTask]
+    if (!props.mode) { // convert to degrees
+      for (let i = 0; i < saved_recordedTask.length; ++i) {
+        for (let j = 0; j < saved_recordedTask[0].length-1; ++j)
+          saved_recordedTask[i][j] *= 57.29578
+      }
+    }
+    new_taskList.push({
+      name: `task${task_num}`,
+      desc: `Recorded Task ${task_num}`,
+      type: props.mode ? "automatic" : "control",
+      length: props.recordedTask.length,
+      data: saved_recordedTask
+    })
+    setTaskList(new_taskList) // add recorded task to task list
+    props.setTaskRecord(false)
+    props.setRecordedTask([])
+  }
+
   return (
     <div style={{ color: "white", position: "absolute", zIndex: 2 }}>
       <ul>
@@ -611,7 +641,9 @@ export default function Menu(props: MenuProps) {
         setControlAngles={props.setControlAngles} /> }
       { record && <Record 
         mode={props.mode}
-        record={record} /> }
+        taskRecord={props.taskRecord}
+        stopRecording={stopRecording}
+        startRecording={startRecording} /> }
       { settings && <Settings 
         base_theta_delta={props.base_theta_delta} 
         joints_theta_delta={props.joints_theta_delta} 

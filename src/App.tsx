@@ -17,6 +17,7 @@ const controlKeys_auto = { "a": false, "d": false, "x": false, "z": false }
 export default function App() {
   const [mode, setMode] = useState(false) // false if control mode, true if auto
   const [taskRecord, setTaskRecord] = useState(false)
+  const [recordedTask, setRecordedTask] = useState([])
   const [currentTask, setCurrentTask] = useState([]) // stores task being recorded
   const [taskList, setTaskList] = useState([[]])
   const [controlTask, setControlTask] = useState(false) // activated if control task
@@ -107,7 +108,11 @@ export default function App() {
         setTarget={setTarget} 
         controlTask={controlTask}
         setControlTask={setControlTask}
-        setControlAngles={setControlAngles} />
+        setControlAngles={setControlAngles}
+        taskRecord={taskRecord}
+        setTaskRecord={setTaskRecord}
+        recordedTask={recordedTask}
+        setRecordedTask={setRecordedTask} />
       <Controls 
         mode={mode} 
         controlKeys={controlKeys} 
@@ -119,7 +124,10 @@ export default function App() {
         controlTask={controlTask}
         setControlTask={setControlTask}
         controlAngles={controlAngles}
-        setControlAngles={setControlAngles} />
+        setControlAngles={setControlAngles}
+        taskRecord={taskRecord}
+        recordedTask={recordedTask}
+        setRecordedTask={setRecordedTask} />
 
         {/* <button onClick={()=>{
               ipcRenderer.send('anything-asynchronous', 'ping')

@@ -67,7 +67,10 @@ interface RenderProps {
   controlTask: boolean,
   setControlTask: any,
   controlAngles: number[],
-  setControlAngles: any
+  setControlAngles: any,
+  taskRecord: boolean,
+  recordedTask: any[],
+  setRecordedTask: any
 }
 
 const x_axis             = new Vector3(1, 0, 0)
@@ -638,6 +641,37 @@ const Arm: React.FC<MeshProps & RenderProps> = (props) => {
     }
   }
 
+  function same_pt(pt1: number[], pt2: number[]) { // return true if points are the same
+    var i: number
+    for (var i = 0; i < pt1.length; ++i)
+      if (pt1[i] !== pt2[i]) return false
+    return true
+  }
+
+  function handle_recording() {
+    const { mode, recordedTask }= props
+    if (recordedTask.length == 0) {
+      if (mode)
+        props.setRecordedTask([props.target])
+      else // todo
+        props.setRecordedTask([baseAngle, ...angles, 0, 1])
+    }
+    else {
+      if (mode && !same_pt(props.target,recordedTask[recordedTask.length-1])) { // automatic mode
+        let newRecordedTask = [...recordedTask, props.target]
+        props.setRecordedTask(newRecordedTask)
+        console.log(recordedTask)
+      }
+      else if (!mode) { // todo not finished
+        var new_task_angles = [baseAngle, ...angles, 0, 1]
+        if (!same_pt(angles,recordedTask[recordedTask.length-1])){ // control mode
+          let newRecordedTask = [...recordedTask, new_task_angles]
+          props.setRecordedTask(newRecordedTask)
+        }
+      }
+    }
+  }
+
   useFrame(() => {
     const { mode, base_theta_delta } = props 
     if (mesh.current) { // control mode operations
@@ -668,6 +702,11 @@ const Arm: React.FC<MeshProps & RenderProps> = (props) => {
       if (props.controlTask && props.controlAngles.length > 0) {
         setBaseAngle(-props.controlAngles[0])
         step_towards_angle()
+      }
+      // handle recording task
+      if (props.taskRecord) {
+        // console.log(props.recordedTask)
+        handle_recording()
       }
     }
   })
@@ -817,7 +856,10 @@ export default function Renderer(props: RenderProps) {
         controlTask={props.controlTask}
         setControlTask={props.setControlTask}
         controlAngles={props.controlAngles}
-        setControlAngles={props.setControlAngles} />
+        setControlAngles={props.setControlAngles}
+        taskRecord={props.taskRecord}
+        recordedTask={props.recordedTask}
+        setRecordedTask={props.setRecordedTask} />
     </Canvas>
     </div>
   )
