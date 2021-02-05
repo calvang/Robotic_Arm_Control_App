@@ -660,7 +660,6 @@ const Arm: React.FC<MeshProps & RenderProps> = (props) => {
       if (mode && !same_pt(props.target,recordedTask[recordedTask.length-1])) { // automatic mode
         let newRecordedTask = [...recordedTask, props.target]
         props.setRecordedTask(newRecordedTask)
-        console.log(recordedTask)
       }
       else if (!mode) { // todo not finished
         var new_task_angles = [baseAngle, ...angles, 0, 1]

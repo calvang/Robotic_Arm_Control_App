@@ -145,7 +145,7 @@ const TaskList = (props: TaskProps) => {
 
   return (
     <TableContainer component={Paper}>
-      <Table aria-label="tasks table">
+      <Table stickyHeader aria-label="tasks table">
         <TableHead>
           <TableRow>
             { task_columns.map((col) => {
@@ -237,7 +237,7 @@ const TaskCommand = (props: TaskProps) => {
       <form id={tasks[currentTask].name} 
         onSubmit={(e) => changeTask(e, data, currentTask)}>
         <TableContainer component={Paper}>
-          <Table aria-label="tasks table">
+          <Table stickyHeader aria-label="tasks table">
             <TableHead>
               <TableRow>
                 { columns.map((col) => {
@@ -303,7 +303,8 @@ const Tasks = (props: TaskViewProps) => {
   return (
     <div className="Menu">
       <div className="MenuHeader"><h3>TASKS</h3></div>
-      <div className="MenuBody" style={{ height: "calc(100vh - 56px" }}>
+      <div className="MenuBody" 
+        style={{ height: "calc(100vh - 56px", overflowY: "auto" }}>
         <br/>
         { currentTask === -1 ? <TaskList 
             tasks={tasks}
@@ -319,6 +320,7 @@ const Tasks = (props: TaskViewProps) => {
           isPlaying={isPlaying}
           handlePlayStop={handlePlayStop}
           handleView={handleView} />}
+          {/* <br/> */}
       </div>
     </div>
   )
